@@ -1,0 +1,54 @@
+#!/bin/bash
+
+workdir="."
+dumpdir="/tmp/parallels_crash_dumps"
+coripper="/usr/bin/coripper"
+prlctl="/usr/bin/prlctl"
+prlsrvctl="/usr/bin/prlsrvctl"
+systemctl="/usr/bin/systemctl"
+
+if [ ! -x "$coripper" ]; then
+  >&2 echo "Error: Unable to find coripper utility."
+  exit -1
+fi
+
+if [ -n "$1" ]; then
+  workdir=$1
+fi
+
+if [ ! -d "$workdir" ]; then
+  >&2 echo "Error: $workdir is not a directory."
+  >&2 echo "Usage: ${0} <dir>"
+  exit -1
+fi
+
+if [[ ! -f "$workdir/executable" || ! -f "$workdir/pkg_version" || ! -f "$workdir/pkg_release" || ! -f "$workdir/pid" || ! -f "$workdir/cmdline" ]]; then
+  >&2 echo "Error: $(readlink -f $workdir) is not a problem directory."
+  >&2 echo "Usage: ${0} <dir>"
+  exit -1
+fi
+
+if ! mkdir -p $dumpdir >/dev/null 2>&1; then
+  >&2 echo "Error: Unable to create directory for dumps: $workdir"
+  exit -1
+fi
+
+corename="$dumpdir/$(cat $workdir/executable | xargs basename).$(sed s/\\./-/g $workdir/pkg_version)-$(sed -r 's/[^0-9]*([0-9]+)[^0-9]*.*/\1/' $workdir/pkg_release).$(cat $workdir/pid).lin.lcore"
+
+$coripper "$workdir/coredump" > $corename
+
+if ! 2>/dev/null >$corename.desc; then
+  >&2 echo "Error: Unable to create file $corename.desc"
+  exit -1
+fi
+
+if ! $systemctl is-active prl-disp >/dev/null 2>&1; then
+  sleep 10
+fi
+
+executable=$(cat "$workdir/executable")
+if [[ $executable =~ .*/qemu-kvm.*  || $executable =~ .*/qemu-system.* ]]; then
+  $prlctl problem-report "{$(sed -r 's/.*-uuid ([^ ]*) .*/\1/' "$workdir/cmdline")}" -s
+else
+  $prlsrvctl problem-report -s
+fi

@@ -52,3 +52,5 @@ if [[ $executable =~ .*/qemu-kvm.*  || $executable =~ .*/qemu-system.* ]]; then
 else
   $prlsrvctl problem-report -s
 fi
+
+exit 0

@@ -20,7 +20,7 @@
 # Schaffhausen, Switzerland.
 
 workdir="."
-dumpdir="/tmp/parallels_crash_dumps"
+dumpdir="/tmp/virtuozzo_crash_dumps"
 coripper="/usr/bin/coripper"
 prlctl="/usr/bin/prlctl"
 prlsrvctl="/usr/bin/prlsrvctl"

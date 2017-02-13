@@ -20,7 +20,7 @@
 # Schaffhausen, Switzerland.
 
 workdir="."
-dumpdir="/tmp/virtuozzo_crash_dumps"
+dumpdir="/vz/tmp/virtuozzo_crash_dumps"
 coripper="/usr/bin/coripper"
 prlctl="/usr/bin/prlctl"
 prlsrvctl="/usr/bin/prlsrvctl"
@@ -59,12 +59,16 @@ fi
 
 corename="$dumpdir/$(cat $workdir/executable | xargs basename).$(sed s/\\./-/g $workdir/pkg_version)-$(sed -r 's/[^0-9]*([0-9]+)[^0-9]*.*/\1/' $workdir/pkg_release).$(cat $workdir/pid).lin.lcore"
 
-$coripper "$workdir/coredump" > $corename
-
-if ! 2>/dev/null >$corename.desc; then
-  >&2 echo "Error: Unable to create file $corename.desc"
+if ! touch $corename $corename.desc >/dev/null 2>&1; then
+  >&2 echo "Error: Unable to create files $corename and $corename.desc"
   exit -1
 fi
+
+if ! chmod 600 $corename $corename.desc >/dev/null 2>&1; then
+  >&2 echo "Warn: Unable to set the appropriate permissions to core files"
+fi
+
+$coripper "$workdir/coredump" > $corename
 
 if ! $systemctl is-active prl-disp >/dev/null 2>&1; then
   sleep 10

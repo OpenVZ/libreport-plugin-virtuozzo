@@ -52,7 +52,7 @@ if [[ ! -f "$workdir/executable" || ! -f "$workdir/pkg_version" || ! -f "$workdi
   exit -1
 fi
 
-if ! mkdir -p $dumpdir >/dev/null 2>&1; then
+if ! mkdir -pm700 $dumpdir >/dev/null 2>&1; then
   >&2 echo "Error: Unable to create directory for dumps: $workdir"
   exit -1
 fi

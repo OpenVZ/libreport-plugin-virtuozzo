@@ -41,11 +41,10 @@ if [ ! -d "$workdir" ]; then
   exit -1
 fi
 
-if [[ ! -f "$workdir/executable" || ! -f "$workdir/pkg_version" || ! -f "$workdir/pkg_release" || ! -f "$workdir/pid" || ! -f "$workdir/cmdline" ]]; then
+if [[ ! -f "$workdir/executable" || ! -f "$workdir/pid" || ! -f "$workdir/cmdline" ]]; then
   >&2 echo "Error: $(readlink -f $workdir) is not a valid problem directory."
   >&2 echo "It doesn't contain one of the required files: "
   [ -f "$workdir/executable" ]  || >&2 echo "  executable"
-  [ -f "$workdir/pkg_release" ] || >&2 echo "  pkg_release"
   [ -f "$workdir/pid" ]         || >&2 echo "  pid"
   [ -f "$workdir/cmdline" ]     || >&2 echo "  cmdline"
   >&2 echo "Usage: ${0} <dir>"
@@ -57,7 +56,18 @@ if ! mkdir -pm700 $dumpdir >/dev/null 2>&1; then
   exit -1
 fi
 
-corename="$dumpdir/$(cat $workdir/executable | xargs basename).$(sed s/\\./-/g $workdir/pkg_version)-$(sed -r 's/[^0-9]*([0-9]+)[^0-9]*.*/\1/' $workdir/pkg_release).$(cat $workdir/pid).lin.lcore"
+version="unknown"
+release="unknown"
+[[ -f "$workdir/pkg_version" ]] && version=`sed s/\\\./-/g $workdir/pkg_version`
+[[ -f "$workdir/pkg_release" ]] && release=`sed -r 's/[^0-9]*([0-9]+)[^0-9]*.*/\1/' $workdir/pkg_release`
+
+echo $version
+echo $release
+
+corename="$dumpdir/$(cat $workdir/executable | xargs basename).${version}-${release}.$(cat $workdir/pid).lin.lcore"
+echo $corename
+
+exit 1
 
 if ! touch $corename $corename.desc >/dev/null 2>&1; then
   >&2 echo "Error: Unable to create files $corename and $corename.desc"
